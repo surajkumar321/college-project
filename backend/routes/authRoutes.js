@@ -17,8 +17,8 @@ router.post("/register", async (req, res) => {
     const exist = await User.findOne({ email });
     if (exist) return res.status(400).json({ error: "User already exists" });
 
-    const hashed = await bcrypt.hash(password, 10);
-    const user = new User({ name, email, password: hashed });
+    // IMPORTANT: do NOT hash here — model pre('save') will hash once
+    const user = new User({ name, email, password });
     await user.save();
 
     // Generate JWT token
@@ -47,7 +47,8 @@ router.post("/login", async (req, res) => {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ error: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._1 }, process.env.JWT_SECRET, {
+    // FIXED: use user._id (not user._1)
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
 
